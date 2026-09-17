@@ -1,0 +1,1 @@
+a:1:{s:9:"426_41221";a:9:{s:3:"sid";i:426;s:3:"ver";s:5:"5.3.8";s:5:"itime";i:1789734271;s:8:"softpath";s:50:"/home/vol12_7/infinityfree.com/if0_41502436/htdocs";s:7:"softurl";s:21:"http://testzone.rf.gd";s:8:"adminurl";b:0;s:10:"softdomain";s:14:"testzone.rf.gd";s:9:"fileindex";a:3:{i:0;s:3:"css";i:1;s:2:"js";i:2;s:9:"index.php";}s:5:"insid";s:9:"426_41221";}}

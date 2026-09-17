@@ -1,0 +1,465 @@
+================================================================================
+LISTADO DE REQUERIMIENTOS — APLICACIÓN SENA (PHP + MySQL + Bootstrap)
+Proyecto: Gestión de inventario y ventas sobre InfinityFree
+================================================================================
+
+Dominio:          testzone.rf.gd
+Base de datos:    if0_41502436_SENA_Ejercicio_BD1
+Entidades (10):   bodega, cliente, item_venta, mueble, paquete, producto,
+                  rol, usuario, usuario_rol, venta
+
+-----------------------------------------------------------------------
+1. REQUERIMIENTOS FUNCIONALES (RF)
+-----------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+RF01 — Página principal (dashboard)
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Ninguna (acceso directo a index.php).
+Procesamiento : Consulta el conteo de registros de cada una de las 10
+                entidades y arma tarjetas con icono, nombre y cantidad.
+Salidas       : Página principal con tarjeta de bienvenida (encabezado y
+                lema configurables) y una tarjeta por entidad con su
+                conteo y el botón "Gestionar".
+Reglas de negocio:
+  - Si una consulta de conteo falla (tabla inexistente), se muestra "—".
+  - Cada botón "Gestionar" dirige al listado paginado de su entidad.
+
+-----------------------------------------------------------------------
+RF02 — Listado paginado por entidad
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : entidad (nombres de tabla), página (p), búsqueda opcional (q).
+Procesamiento : Construye una consulta SELECT con las columnas visibles
+                (excluyendo columnas autoincrementales), aplica filtro de
+                búsqueda si existe, ordena por clave primaria y limita los
+                resultados a "registros por página".
+Salidas       : Tabla HTML con las filas de la página actual, contador
+                "Mostrando X–Y de Z", barra de paginación y acciones por fila.
+Reglas de negocio:
+  - El número de página se fuerza a un valor >= 1.
+  - Se muestra el conteo total de registros.
+  - Solo se muestran columnas visibles (las columnas "id" quedan ocultas).
+
+-----------------------------------------------------------------------
+RF03 — Búsqueda libre por texto
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Término de búsqueda (q) sobre columnas de tipo texto
+                (varchar, char, text, enum).
+Procesamiento : Filtra con operadores LIKE (OR entre las columnas
+                textuales de la entidad) sin interrumpir la paginación.
+Salidas       : Listado solo con los registros que coinciden, manteniendo
+                "Mostrando X de Y (filtrados por ...)".
+Reglas de negocio:
+  - La búsqueda está disponible únicamente si la entidad tiene columnas
+    textuales.
+  - La paginación conserva el filtro de búsqueda.
+
+-----------------------------------------------------------------------
+RF04 — Creación de registros (Alta)
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Valores del formulario de alta (campos editables según la
+                entidad).
+Procesamiento : Valida obligatoriedad y tipos numéricos, omite campos en
+                blanco con valor por defecto en BD, genera INSERT con
+                consultas preparadas y redirige al listado.
+Salidas       : Registro insertado en la tabla; mensaje flash de éxito o
+                listado de errores.
+Reglas de negocio:
+  - Las columnas autoincrementales ("id") no se solicitan en el formulario.
+  - Los campos obligatorios sin valor por defecto no pueden quedar vacíos.
+  - Un campo en blanco con valor por defecto usa el default de la BD.
+  - Un campo en blanco nullable se guarda como NULL.
+  - Los campos numéricos deben ser numéricos.
+  - Protección CSRF en el envío.
+
+-----------------------------------------------------------------------
+RF05 — Edición de registros (Modificación)
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Identificador(s) de la clave primaria + valores del
+                formulario de edición.
+Procesamiento : Localiza el registro por clave primaria, valida los datos,
+                genera UPDATE con consultas preparadas y redirige al
+                listado.
+Salidas       : Registro actualizado; mensaje flash de éxito o errores.
+Reglas de negocio:
+  - El "id" (autoincremental) no se modifica; solo se muestra como
+    referencia "Registro #N".
+  - Los campos en blanco con valor por defecto y los nullable no se pisan
+    con vacío.
+  - En tablas pivote (usuario_rol) la clave compuesta se puede cambiar
+    siempre que no se duplique.
+  - Protección CSRF en el envío.
+
+-----------------------------------------------------------------------
+RF06 — Eliminación de registros (Baja)
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Identificador(es) de la clave primaria del registro a
+                borrar.
+Procesamiento : Pide confirmación al usuario, valida el token CSRF y
+                ejecuta DELETE WHERE clave primaria.
+Salidas       : Registro eliminado; mensaje flash de éxito o error si la
+                BD rechaza la operación (p. ej. claves dependientes).
+Reglas de negocio:
+  - Eliminar es una operación definitiva (se confirma por JavaScript).
+  - Errores de integridad de BD se muestran sin romper la página.
+
+-----------------------------------------------------------------------
+RF07 — Ocultamiento y no-modificación de columnas "id"
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Metadatos de la tabla (information_schema).
+Procesamiento : Identifica columnas autoincrementales y las excluye de la
+                lista de columnas visibles y de los campos editables.
+Salidas       : Listados sin la columna "id" y formularios sin campo "id"
+                modificable.
+Reglas de negocio:
+  - Es de aplicación general a todas las entidades.
+  - En edición el "id" se muestra de forma informativa (no editable).
+
+-----------------------------------------------------------------------
+RF08 — Generación dinámica de formularios desde la base de datos
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Esquema de la tabla (metadatos de columnas).
+Procesamiento : Para cada columna no autoincremental elige el control
+                adecuado: texto, número, fecha, textarea, selección por
+                enum o selección por clave foránea.
+Salidas       : Formularios de alta/edición autogenerados por entidad.
+Reglas de negocio:
+  - Se respeta el tipo de dato declarado en la base de datos.
+  - Se marcan con "*" los campos obligatorios.
+
+-----------------------------------------------------------------------
+RF09 — Claves foráneas como listas desplegables
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Columnas que referencian otras tablas (por nombre de
+                columna igual a tabla o alias: contenedor -> paquete,
+                vendedor -> usuario).
+Procesamiento : Detecta FKs, consulta la tabla referenciada y muestra una
+                lista con la etiqueta humana de cada registro.
+Salidas       : <select> con las opciones relacionadas; en el listado se
+                muestra el valor de la etiqueta en lugar del número.
+Reglas de negocio:
+  - Si la FK es opcional, se ofrece la opción "— Sin asignar —".
+  - La etiqueta se elige en este orden: nombre, descripción, número,
+    login, código, identificación, serial, categoría.
+
+-----------------------------------------------------------------------
+RF10 — Campos enum como lista de valores
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Columnas de tipo enum(esquema).
+Procesamiento : Extrae valores del enum desde information_schema y genera
+                una lista desplegable.
+Salidas       : Select con los valores permitidos; al crear se preselecciona
+                el valor por defecto de la tabla.
+Reglas de negocio:
+  - Solo se pueden seleccionar valores definidos en la BD.
+
+-----------------------------------------------------------------------
+RF11 — Manejo de fechas y horas
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Columnas datetime/timestamp/date.
+Procesamiento : Convierte el formato MySQL a formatos de entrada HTML y
+                viceversa.
+Salidas       : Selector de fecha y hora nativo; en listados se muestran
+                como "YYYY-MM-DD HH:MM".
+Reglas de negocio:
+  - "fecha" de la entidad venta usa el default current_timestamp si se
+    deja en blanco.
+
+-----------------------------------------------------------------------
+RF12 — Validación de datos de entrada
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Datos enviados por los formularios.
+Procesamiento : Valida campos obligatorios, campos numéricos y formato de
+                fechas; si hay errores re-muestra el formulario con los
+                valores ingresados.
+Salidas       : Registro guardado o formulario con mensajes de error.
+Reglas de negocio:
+  - Los errores se enumeran en la parte superior del formulario.
+
+-----------------------------------------------------------------------
+RF13 — Encabezado configurable
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Administrador / configurador (página Configuración)
+Entradas      : Texto de encabezado ("Enhace principal").
+Procesamiento : Se almacena en settings.json y la página principal lo
+                muestra como título destacado.
+Salidas       : Encabezado personalizado en la página principal.
+Reglas de negocio:
+  - El cambio es inmediato sin desplegar código.
+
+-----------------------------------------------------------------------
+RF14 — Pie de página configurable
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Administrador / configurador
+Entradas      : Texto de pie de página.
+Procesamiento : Se almacena en settings.json y se muestra en el pie de
+                todas las páginas.
+Salidas       : Pie de página personalizado.
+Reglas de negocio:
+  - El cambio es inmediato.
+
+-----------------------------------------------------------------------
+RF15 — Nombre del sitio y lema configurables
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Administrador / configurador
+Entradas      : Nombre del sitio y lema/subtítulo.
+Procesamiento : Se almacenan en settings.json; el nombre aparece en el
+                menú y en los títulos de las páginas; el lema en la página
+                principal.
+Salidas       : Identidad del sitio actualizable desde la interfaz.
+Reglas de negocio:
+  - El nombre del sitio no puede quedar vacío.
+
+-----------------------------------------------------------------------
+RF16 — Tamaño de página configurable
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Administrador / configurador
+Entradas      : Número de registros por página.
+Procesamiento : Se aplica al paginador de todos los listados.
+Salidas       : Listados con el tamaño de página elegido.
+Reglas de negocio:
+  - Rango válido 1 a 100.
+
+-----------------------------------------------------------------------
+RF17 — Tema por defecto configurable
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Administrador / configurador
+Entradas      : Tema (automático / claro / oscuro).
+Procesamiento : El tema elegido se aplica al cargar (con respeto a la
+                preferencia guardada del visitante).
+Salidas       : Sitio inicializado en el tema configurado.
+Reglas de negocio:
+  - "Automático" sigue la preferencia del sistema operativo del visitante.
+
+-----------------------------------------------------------------------
+RF18 — Modo oscuro con alternancia y persistencia
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Clic en el botón de tema del menú superior.
+Procesamiento : Intercambia data-bs-theme entre claro/oscuro y guarda la
+                elección en localStorage.
+Salidas       : Interfaz en claro u oscuro según la preferencia.
+Reglas de negocio:
+  - La preferencia del visitante se conserva entre sesiones.
+  - El tema se aplica antes de pintar la página (sin parpadeo).
+
+-----------------------------------------------------------------------
+RF19 — Conjunto de iconos
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Iconografía de Bootstrap Icons por CDN.
+Procesamiento : Iconos en menú, tarjetas de dashboard, acciones de fila,
+                paginador y mensajes.
+Salidas       : Interfaz con iconografía consistente.
+Reglas de negocio:
+  - Cada entidad tiene su icono asociado.
+
+-----------------------------------------------------------------------
+RF20 — Mensajes de confirmación y error (flash)
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Resultado de las operaciones de guardado/eliminación.
+Procesamiento : Se guardan en sesión y se muestran una sola vez tras la
+                redirección.
+Salidas       : Alertas de éxito/error descartables.
+Reglas de negocio:
+  - Los mensajes se muestran una única vez.
+
+-----------------------------------------------------------------------
+RF21 — Navegación por entidades
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Menú desplegable "Entidades".
+Procesamiento : Lista las 10 entidades con su icono y enlaza a su CRUD.
+Salidas       : Acceso directo a cada entidad desde cualquier página.
+Reglas de negocio:
+  - El menú es responsivo (colapsa en móviles).
+
+-----------------------------------------------------------------------
+RF22 — Protección contra falsificación de peticiones (CSRF)
+-----------------------------------------------------------------------
+Prioridad     : Alta
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Token aleatorio generado y almacenado en sesión.
+Procesamiento : Se valida el token en cada envío POST.
+Salidas       : Operaciones rechazadas si el token no coincide.
+Reglas de negocio:
+  - Aplica a crear, editar, eliminar y guardar configuración.
+
+-----------------------------------------------------------------------
+RF23 — Confirmación antes de eliminar
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Clic en el botón eliminar de una fila.
+Procesamiento : Cuadro de diálogo de confirmación antes del envío.
+Salidas       : Eliminación solo si el usuario confirma.
+Reglas de negocio:
+  - Ninguna fila se elimina sin confirmación explícita.
+
+-----------------------------------------------------------------------
+RF24 — Conteo de registros por entidad
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Público (todos los visitantes)
+Entradas      : Listado de entidades de la aplicación.
+Procesamiento : Ejecuta COUNT(*) por cada entidad.
+Salidas       : Número de registros en cada tarjeta del dashboard.
+Reglas de negocio:
+  - Si una consulta falla se muestra "—" en lugar de romper la página.
+
+-----------------------------------------------------------------------
+RF25 — Persistencia de la configuración
+-----------------------------------------------------------------------
+Prioridad     : Media
+Usuario/Rol   : Administrador / configurador
+Entradas      : Ajustes guardados desde la página Configuración.
+Procesamiento : Escribe settings.json; si no hay permisos de escritura se
+                informa al usuario.
+Salidas       : settings.json actualizado con la configuración.
+Reglas de negocio:
+  - Si no se puede escribir, se notifica el fallo sin perder los valores
+    por defecto.
+
+-----------------------------------------------------------------------
+2. REQUERIMIENTOS NO FUNCIONALES (RNF)
+-----------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+RNF01 — Seguridad: prevención de inyección SQL
+-----------------------------------------------------------------------
+Descripción : Todas las consultas a base de datos usan PDO con consultas
+              preparadas y parámetros enlazados; los identificadores se
+              sanitizan con nombre de tabla/columna validado.
+Impacto     : Alto.
+
+-----------------------------------------------------------------------
+RNF02 — Seguridad: salida escapada (XSS)
+-----------------------------------------------------------------------
+Descripción : Todos los datos dinámicos se escapan con htmlspecialchars
+              antes de imprimirse (función e()).
+Impacto     : Alto.
+
+-----------------------------------------------------------------------
+RNF03 — Seguridad: tokens CSRF
+-----------------------------------------------------------------------
+Descripción : Todo POST (crear, editar, eliminar, configuración) exige un
+              token CSRF generado y verificado en sesión.
+Impacto     : Alto.
+
+-----------------------------------------------------------------------
+RNF04 — Rendimiento: paginación con LIMIT/OFFSET
+-----------------------------------------------------------------------
+Descripción : Los listados solo recuperan la página actual con LIMIT y
+              OFFSET; el total se obtiene con COUNT en una consulta
+              separada.
+Impacto     : Medio.
+
+-----------------------------------------------------------------------
+RNF05 — Compatibilidad con PHP 8.x
+-----------------------------------------------------------------------
+Descripción : El código usa funciones y sintaxis propias de PHP 8
+              (tipado, arrow functions, null-coalescing). Probado con
+              PHP 8.3.
+Impacto     : Alto.
+
+-----------------------------------------------------------------------
+RNF06 — Compatibilidad con MySQL/MariaDB
+-----------------------------------------------------------------------
+Descripción : Usa PDO sobre MySQL/MariaDB (instancia 11.4 MariaDB de
+              InfinityFree) y metadatos de information_schema.
+Impacto     : Alto.
+
+-----------------------------------------------------------------------
+RNF07 — Compatibilidad con hosting compartido (InfinityFree)
+-----------------------------------------------------------------------
+Descripción : Aplicación 100 % PHP plano sin Composer, sin Node y sin
+              procesos en segundo plano; los estilos/JS de Bootstrap usan
+              los archivos locales ya instalados y los iconos van por CDN.
+Impacto     : Alto.
+
+-----------------------------------------------------------------------
+RNF08 — Usabilidad: diseño responsivo
+-----------------------------------------------------------------------
+Descripción : Interfaz construida con Bootstrap 5; menús, tablas y
+              formularios se adaptan a escritorio, tablet y móvil.
+Impacto     : Medio.
+
+-----------------------------------------------------------------------
+RNF09 — Usabilidad: modo oscuro nativo
+-----------------------------------------------------------------------
+Descripción : Modo oscuro/ claro mediante data-bs-theme con persistencia
+              en localStorage.
+Impacto     : Medio.
+
+-----------------------------------------------------------------------
+RNF10 — Mantenibilidad: CRUD genérico por metadatos
+-----------------------------------------------------------------------
+Descripción : Un único controlador sirve a las 10 entidades leyendo el
+              esquema; agregar/eliminar tablas no requiere reescribir
+              código, solo actualizar el catálogo de entidades.
+Impacto     : Alto.
+
+-----------------------------------------------------------------------
+RNF11 — Mantenibilidad: configuración sin código
+-----------------------------------------------------------------------
+Descripción : Encabezado, pie, nombre, lema, pág., y tema se cambian desde
+              la interfaz y se guardan en un archivo JSON; no se requiere
+              editar PHP.
+Impacto     : Medio.
+
+-----------------------------------------------------------------------
+RNF12 — Accesibilidad básica
+-----------------------------------------------------------------------
+Descripción : Etiquetas asociadas a campos (for/id), aria-label en
+              controles de icono, textos alternativos de estado y
+              contraste según tema.
+Impacto     : Bajo.
+
+-----------------------------------------------------------------------
+RNF13 — Usabilidad: retroalimentación al usuario
+-----------------------------------------------------------------------
+Descripción : Mensajes flash, contador de registros, indicador de
+              resultados filtrados y confirmación de eliminación.
+Impacto     : Bajo.
+
+-----------------------------------------------------------------------
+RNF14 — Portabilidad de despliegue
+-----------------------------------------------------------------------
+Descripción : Los parámetros de conexión y los ajustes se concentran en
+              config.php / settings.json; basta con subir la carpeta
+              htdocs para desplegar.
+Impacto     : Alto.
