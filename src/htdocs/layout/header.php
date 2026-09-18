@@ -71,6 +71,11 @@ $icons = $GLOBALS['ENTITY_ICONS'] ?? [];
                         <i class="bi bi-gear me-1"></i>Configuración
                     </a>
                 </li>
+                                <li class="nav-item">
+                    <a class="nav-link <?php echo $current === 'acerca' ? 'active' : ''; ?>" href="acerca.php">
+                        <i class="bi bi-info-circle me-1"></i>Acerca de
+                    </a>
+                </li>
             </ul>
             <div class="d-flex align-items-center gap-2">
                 <button type="button" class="btn btn-outline-light btn-sm" id="themeToggle" title="Cambiar tema" aria-label="Cambiar tema">
