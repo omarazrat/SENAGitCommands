@@ -75,7 +75,7 @@ $icons = $GLOBALS['ENTITY_ICONS'] ?? [];
             
             <li class="nav-item">
                     <a class="nav-link <?php echo $current === 'acerca' ? 'active' : ''; ?>" href="acerca.php">
-                        <i class="bi bi-info-circle me-1"></i>Acerca de
+                        <i class="bi bi-info-circle me-1"></i>Acerca de: 
                     </a>
                 </li>
 
